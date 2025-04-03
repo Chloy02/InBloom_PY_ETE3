@@ -6,18 +6,99 @@ import random
 from wordcloud import WordCloud
 from PIL import Image, ImageFilter, ImageOps
 
+# Set up the Streamlit page configuration
 st.set_page_config(page_title="InBloom", page_icon=":tulip:", layout="wide")
-st.title("InBloom")
-st.write("This is a web app that allows you to visualize the data from the InBloom dataset.")
 
-# Dataset generation
+# Add this near the top of your file, after the imports
+custom_css = """
+<style>
+    /* Main container styling */
+    .main {
+        padding: 1rem;
+    }
+    
+    /* Custom title styling */
+    .title-text {
+        color: #1E88E5;
+        font-size: 3rem;
+        font-weight: 600;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e0e0e0;
+        margin-bottom: 2rem;
+    }
+    
+    /* Section headers */
+    .section-header {
+        color: #2E7D32;
+        font-size: 1.8rem;
+        padding: 0.5rem 0;
+        margin: 1rem 0;
+        border-left: 4px solid #4CAF50;
+        padding-left: 1rem;
+    }
+    
+    /* Dashboard metrics */
+    .metric-card {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #1E88E5;
+        margin: 0.5rem 0;
+    }
+    
+    /* Sidebar styling */
+    .sidebar-content {
+        padding: 1.5rem;
+        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+    }
+    
+    /* Filter labels */
+    .filter-label {
+        color: #424242;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Download button */
+    .download-btn {
+        background-color: #4CAF50;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    .download-btn:hover {
+        background-color: #45a049;
+    }
+</style>
+"""
+
+# Add the custom CSS to the page
+st.markdown(custom_css, unsafe_allow_html=True)
+
+# Update the title styling
+st.markdown('<p class="title-text">InBloom</p>', unsafe_allow_html=True)
+
+# Enhanced Sidebar with custom styling
+with st.sidebar:
+    st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
+    st.image("inbloom_logo.png", caption="InBloom Logo", use_container_width=True)
+    st.markdown("<h1 style='text-align: center; color: #4CAF50; font-size: 2rem;'>InBloom '25</h1>", unsafe_allow_html=True)
+    st.markdown('<p class="filter-label">Navigation</p>', unsafe_allow_html=True)
+    page = st.radio("Go to", ["Dataset", "Dashboard", "Text Analysis", "Image Processing"])
+    st.markdown("---")
+    st.markdown('<p class="filter-label">Additional Filters & Options</p>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Dataset Generation Function
 def generate_dataset():
-    # Predefined lists for dataset generation
     events = ["Solo Dance", "Group Dance", "Singing", "Drama", "Debate", 
               "Photography", "Poetry", "Fashion Show", "Quiz", "Treasure Hunt"]
     days = ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"]
     colleges = ["College A", "College B", "College C", "College D", "College E"]
-    # Updated to use actual Indian states
     states = [
         "Maharashtra", "Karnataka", "Tamil Nadu", "Kerala", 
         "Gujarat", "Delhi", "Uttar Pradesh", "West Bengal",
@@ -36,7 +117,6 @@ def generate_dataset():
         "Needs improvement in planning."
     ]
     
-    # Generate random names from sample first and last names
     first_names = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Drew", "Jamie", "Robin", "Riley", "Cameron"]
     last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Wilson"]
 
@@ -48,72 +128,99 @@ def generate_dataset():
         state = random.choice(states)
         event = random.choice(events)
         day = random.choice(days)
-        # Generate a random time between 10:00 and 18:00
         hour = random.randint(10, 18)
         minute = random.randint(0, 59)
         time_str = f"{hour:02d}:{minute:02d}"
         feedback = random.choice(feedback_options)
-        # New columns
-        age = random.randint(18, 25)  # Typical college student age range
+        age = random.randint(18, 25)  # Typical college age
         score = random.randint(60, 100)  # Performance/participation score
         
         data.append({
             "ParticipantID": participant_id,
             "Name": name,
-            "Age": age,  # New column
+            "Age": age,
             "College": college,
             "State": state,
             "Event": event,
             "Day": day,
             "Time": time_str,
-            "Score": score,  # New column
+            "Score": score,
             "Feedback": feedback
         })
     df = pd.DataFrame(data)
     return df
 
-# Generate the dataset and store it in session state for persistence
+# Generate and store dataset in session state for persistence
 if "dataset" not in st.session_state:
     st.session_state["dataset"] = generate_dataset()
 df = st.session_state["dataset"]
 
-# Sidebar for navigation
-st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Dataset", "Dashboard", "Text Analysis", "Image Processing"])
-
 # ------------------ Dataset Section ------------------
 if page == "Dataset":
-    st.header("Dataset")
+    st.markdown('<h2 class="section-header">Dataset</h2>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
     st.write("Generated Dataset for InBloom '25")
     st.dataframe(df)
-    # Provide an option to download the dataset as CSV
+    st.markdown('</div>', unsafe_allow_html=True)
     csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button("Download CSV", data=csv, file_name="inbloom_dataset.csv", mime="text/csv")
+    st.download_button(
+        "Download CSV",
+        data=csv,
+        file_name="inbloom_dataset.csv",
+        mime="text/csv",
+        help="Click to download the dataset as CSV",
+    )
 
 # ------------------ Dashboard Section ------------------
 elif page == "Dashboard":
-    st.header("Dashboard")
+    st.markdown('<h2 class="section-header">Dashboard</h2>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
     st.write("Visualize participation trends with interactive filters.")
+    
+    # Add metrics in a clean layout
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div style="padding:1rem; background-color:#f0f8ff; border-radius:8px; text-align:center;">
+            <h3 style="color:#1E88E5;">Total Participants</h3>
+            <h2>{len(filtered_df)}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+        <div style="padding:1rem; background-color:#f0fff0; border-radius:8px; text-align:center;">
+            <h3 style="color:#2E7D32;">Average Score</h3>
+            <h2>{filtered_df['Score'].mean():.1f}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+        <div style="padding:1rem; background-color:#fff0f0; border-radius:8px; text-align:center;">
+            <h3 style="color:#C62828;">Events Count</h3>
+            <h2>{filtered_df['Event'].nunique()}</h2>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Dashboard Filters in Sidebar
-    st.sidebar.subheader("Dashboard Filters")
+    # Dashboard Filters (these can appear in the sidebar as well)
     selected_event = st.sidebar.multiselect("Select Event", options=df["Event"].unique(), default=df["Event"].unique())
     selected_state = st.sidebar.multiselect("Select State", options=df["State"].unique(), default=df["State"].unique())
     selected_college = st.sidebar.multiselect("Select College", options=df["College"].unique(), default=df["College"].unique())
     selected_day = st.sidebar.multiselect("Select Day", options=df["Day"].unique(), default=df["Day"].unique())
 
-    # Filter the dataset based on the selections
     filtered_df = df[
         (df["Event"].isin(selected_event)) &
         (df["State"].isin(selected_state)) &
         (df["College"].isin(selected_college)) &
         (df["Day"].isin(selected_day))
     ]
-
     st.write("Filtered Dataset:", filtered_df.shape)
     st.dataframe(filtered_df)
 
-    # 1. Day-wise Participation Chart
+    # Chart 1: Day-wise Participation
     day_counts = filtered_df["Day"].value_counts().sort_index()
     fig1, ax1 = plt.subplots()
     ax1.bar(day_counts.index, day_counts.values, color="skyblue")
@@ -122,7 +229,7 @@ elif page == "Dashboard":
     ax1.set_ylabel("Number of Participants")
     st.pyplot(fig1)
 
-    # 2. Event-wise Participation Chart
+    # Chart 2: Event-wise Participation
     event_counts = filtered_df["Event"].value_counts()
     fig2, ax2 = plt.subplots()
     ax2.bar(event_counts.index, event_counts.values, color="coral")
@@ -132,7 +239,7 @@ elif page == "Dashboard":
     plt.xticks(rotation=45)
     st.pyplot(fig2)
 
-    # 3. College-wise Participation Chart
+    # Chart 3: College-wise Participation
     college_counts = filtered_df["College"].value_counts()
     fig3, ax3 = plt.subplots()
     ax3.bar(college_counts.index, college_counts.values, color="lightgreen")
@@ -142,7 +249,7 @@ elif page == "Dashboard":
     plt.xticks(rotation=45)
     st.pyplot(fig3)
 
-    # 4. State-wise Participation Chart
+    # Chart 4: State-wise Participation
     state_counts = filtered_df["State"].value_counts()
     fig4, ax4 = plt.subplots()
     ax4.bar(state_counts.index, state_counts.values, color="plum")
@@ -151,7 +258,7 @@ elif page == "Dashboard":
     ax4.set_ylabel("Number of Participants")
     st.pyplot(fig4)
 
-    # 5. Participation Time Distribution Histogram
+    # Chart 5: Participation Time Distribution Histogram
     times = pd.to_datetime(filtered_df["Time"], format="%H:%M").dt.hour
     fig5, ax5 = plt.subplots()
     ax5.hist(times, bins=range(10, 20), color="gold", edgecolor="black")
@@ -160,7 +267,7 @@ elif page == "Dashboard":
     ax5.set_ylabel("Frequency")
     st.pyplot(fig5)
 
-    # 6. Age Distribution
+    # Chart 6: Age Distribution
     fig6, ax6 = plt.subplots()
     ax6.hist(filtered_df["Age"], bins=8, color="lightblue", edgecolor="black")
     ax6.set_title("Age Distribution of Participants")
@@ -168,7 +275,7 @@ elif page == "Dashboard":
     ax6.set_ylabel("Frequency")
     st.pyplot(fig6)
 
-    # 7. Score Distribution
+    # Chart 7: Score Distribution
     fig7, ax7 = plt.subplots()
     ax7.hist(filtered_df["Score"], bins=10, color="salmon", edgecolor="black")
     ax7.set_title("Score Distribution")
@@ -176,7 +283,7 @@ elif page == "Dashboard":
     ax7.set_ylabel("Frequency")
     st.pyplot(fig7)
 
-    # 8. Average Score by Event
+    # Chart 8: Average Score by Event
     avg_scores = filtered_df.groupby("Event")["Score"].mean().sort_values(ascending=False)
     fig8, ax8 = plt.subplots()
     ax8.bar(avg_scores.index, avg_scores.values, color="lightgreen")
@@ -188,14 +295,14 @@ elif page == "Dashboard":
 
 # ------------------ Text Analysis Section ------------------
 elif page == "Text Analysis":
-    st.header("Text Analysis")
+    st.markdown('<h2 class="section-header">Text Analysis</h2>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
     st.write("Generate a word cloud based on event-wise feedback.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Select an event for feedback analysis
     event_option = st.selectbox("Select Event for Feedback Analysis", options=df["Event"].unique())
     event_feedback = df[df["Event"] == event_option]["Feedback"].str.cat(sep=" ")
 
-    # Generate and display the word cloud
     if event_feedback:
         wc = WordCloud(width=800, height=400, background_color='white').generate(event_feedback)
         fig_wc, ax_wc = plt.subplots(figsize=(10, 5))
@@ -208,22 +315,20 @@ elif page == "Text Analysis":
 
 # ------------------ Image Processing Section ------------------
 elif page == "Image Processing":
-    st.header("Image Processing")
+    st.markdown('<h2 class="section-header">Image Processing</h2>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
     st.write("Upload event-related images and apply custom processing.")
-
-    # Option to choose a day for image gallery (optional filter)
+    st.markdown('</div>', unsafe_allow_html=True)
     selected_gallery_day = st.selectbox("Select Day for Image Gallery", options=df["Day"].unique())
-
-    # File uploader for images (multiple allowed)
     uploaded_images = st.file_uploader("Upload Images", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
-
+    
     if uploaded_images:
         st.subheader("Original Images")
         cols = st.columns(3)
         for i, img_file in enumerate(uploaded_images):
             image = Image.open(img_file)
             cols[i % 3].image(image, caption="Original", use_container_width=True)
-
+        
         st.subheader("Apply Custom Image Processing")
         processing_option = st.selectbox("Select Processing Option", 
                                          options=["Grayscale", "Blur", "Edge Enhance", "Invert"])
@@ -239,11 +344,10 @@ elif page == "Image Processing":
             elif processing_option == "Invert":
                 processed = ImageOps.invert(image.convert("RGB"))
             processed_images.append(processed)
-
+        
         st.subheader("Processed Images")
         cols_proc = st.columns(3)
         for i, proc_img in enumerate(processed_images):
             cols_proc[i % 3].image(proc_img, caption=processing_option, use_container_width=True)
     else:
         st.write("No images uploaded.")
-
