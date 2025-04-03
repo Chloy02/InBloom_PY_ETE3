@@ -17,7 +17,12 @@ def generate_dataset():
               "Photography", "Poetry", "Fashion Show", "Quiz", "Treasure Hunt"]
     days = ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"]
     colleges = ["College A", "College B", "College C", "College D", "College E"]
-    states = ["State X", "State Y", "State Z", "State W"]
+    # Updated to use actual Indian states
+    states = [
+        "Maharashtra", "Karnataka", "Tamil Nadu", "Kerala", 
+        "Gujarat", "Delhi", "Uttar Pradesh", "West Bengal",
+        "Rajasthan", "Madhya Pradesh", "Punjab", "Telangana"
+    ]
     feedback_options = [
         "Amazing event, really enjoyed it!",
         "Could be better organized.",
@@ -48,14 +53,20 @@ def generate_dataset():
         minute = random.randint(0, 59)
         time_str = f"{hour:02d}:{minute:02d}"
         feedback = random.choice(feedback_options)
+        # New columns
+        age = random.randint(18, 25)  # Typical college student age range
+        score = random.randint(60, 100)  # Performance/participation score
+        
         data.append({
             "ParticipantID": participant_id,
             "Name": name,
+            "Age": age,  # New column
             "College": college,
             "State": state,
             "Event": event,
             "Day": day,
             "Time": time_str,
+            "Score": score,  # New column
             "Feedback": feedback
         })
     df = pd.DataFrame(data)
@@ -148,6 +159,32 @@ elif page == "Dashboard":
     ax5.set_xlabel("Hour of the Day")
     ax5.set_ylabel("Frequency")
     st.pyplot(fig5)
+
+    # 6. Age Distribution
+    fig6, ax6 = plt.subplots()
+    ax6.hist(filtered_df["Age"], bins=8, color="lightblue", edgecolor="black")
+    ax6.set_title("Age Distribution of Participants")
+    ax6.set_xlabel("Age")
+    ax6.set_ylabel("Frequency")
+    st.pyplot(fig6)
+
+    # 7. Score Distribution
+    fig7, ax7 = plt.subplots()
+    ax7.hist(filtered_df["Score"], bins=10, color="salmon", edgecolor="black")
+    ax7.set_title("Score Distribution")
+    ax7.set_xlabel("Score")
+    ax7.set_ylabel("Frequency")
+    st.pyplot(fig7)
+
+    # 8. Average Score by Event
+    avg_scores = filtered_df.groupby("Event")["Score"].mean().sort_values(ascending=False)
+    fig8, ax8 = plt.subplots()
+    ax8.bar(avg_scores.index, avg_scores.values, color="lightgreen")
+    ax8.set_title("Average Score by Event")
+    ax8.set_xlabel("Event")
+    ax8.set_ylabel("Average Score")
+    plt.xticks(rotation=45)
+    st.pyplot(fig8)
 
 # ------------------ Text Analysis Section ------------------
 elif page == "Text Analysis":
