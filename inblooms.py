@@ -13,12 +13,73 @@ import datetime
 import altair as alt
 import zipfile
 
-# Set up the Streamlit page configuration
+# Force dark theme
+st.markdown("""
+<style>
+    /* Main background */
+    .stApp {
+        background-color: #0E1117;
+        color: #FAFAFA;
+    }
+
+    /* Sidebar */
+    .css-1d391kg {
+        background-color: #262730;
+    }
+
+    /* Tables */
+    .stDataFrame {
+        background-color: #1F2937;
+    }
+
+    /* DataTable background and text */
+    .dataframe {
+        background-color: #1F2937;
+        color: #FAFAFA;
+    }
+
+    /* Table cells */
+    .dataframe td, .dataframe th {
+        background-color: #1F2937 !important;
+        color: #FAFAFA !important;
+    }
+
+    /* Table header */
+    .dataframe thead th {
+        background-color: #374151 !important;
+        color: #FAFAFA !important;
+    }
+
+    /* Table hover */
+    .dataframe tr:hover {
+        background-color: #374151 !important;
+    }
+
+    /* Pagination buttons */
+    .st-emotion-cache-1y4p8pa {
+        background-color: #1F2937;
+        color: #FAFAFA;
+    }
+
+    /* Inputs and selectboxes */
+    .stSelectbox, .stTextInput {
+        background-color: #1F2937;
+        color: #FAFAFA;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Set page config with dark theme
 st.set_page_config(
-    page_title="InBloom '25", 
-    page_icon="🌷", 
+    page_title="InBloom '25",
+    page_icon="🌷",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': None
+    }
 )
 
 # Define color scheme
