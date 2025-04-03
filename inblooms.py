@@ -26,72 +26,16 @@ st.set_page_config(
     }
 )
 
-# Then add dark theme styling
-st.markdown("""
-<style>
-    /* Main background */
-    .stApp {
-        background-color: #0E1117;
-        color: #FAFAFA;
-    }
-
-    /* Sidebar */
-    .css-1d391kg {
-        background-color: #262730;
-    }
-
-    /* Tables */
-    .stDataFrame {
-        background-color: #1F2937;
-    }
-
-    /* DataTable background and text */
-    .dataframe {
-        background-color: #1F2937;
-        color: #FAFAFA;
-    }
-
-    /* Table cells */
-    .dataframe td, .dataframe th {
-        background-color: #1F2937 !important;
-        color: #FAFAFA !important;
-    }
-
-    /* Table header */
-    .dataframe thead th {
-        background-color: #374151 !important;
-        color: #FAFAFA !important;
-    }
-
-    /* Table hover */
-    .dataframe tr:hover {
-        background-color: #374151 !important;
-    }
-
-    /* Pagination buttons */
-    .st-emotion-cache-1y4p8pa {
-        background-color: #1F2937;
-        color: #FAFAFA;
-    }
-
-    /* Inputs and selectboxes */
-    .stSelectbox, .stTextInput {
-        background-color: #1F2937;
-        color: #FAFAFA;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# Define color scheme
+# Define dark theme color scheme
 PRIMARY_COLOR = "#4CAF50"
 SECONDARY_COLOR = "#1E88E5"
 ACCENT_COLOR = "#FF5722"
-BG_COLOR = "#f9f9f9"
-CARD_BG_COLOR = "#ffffff"
-TEXT_COLOR = "#333333"
-MUTED_TEXT = "#6c757d"
+BG_COLOR = "#0E1117"        # Dark background
+CARD_BG_COLOR = "#1F2937"   # Darker card background
+TEXT_COLOR = "#FAFAFA"      # Light text
+MUTED_TEXT = "#AAAAAA"      # Muted light text
 
-# Custom CSS for styling with enhanced aesthetics
+# Custom CSS for styling with dark theme
 custom_css = f"""
 <style>
     /* Main container styling */
@@ -111,74 +55,16 @@ custom_css = f"""
         background: linear-gradient(90deg, {PRIMARY_COLOR}22, {SECONDARY_COLOR}22);
         padding: 1.5rem;
         border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }}
     
-    .title-text {{
-        color: {PRIMARY_COLOR};
-        font-size: 3.5rem;
-        font-weight: 700;
-        text-align: center;
-        margin: 0;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        background: linear-gradient(90deg, {PRIMARY_COLOR}, {SECONDARY_COLOR});
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: 1px;
-    }}
-    
-    /* Section headers */
-    .section-header {{
-        color: {PRIMARY_COLOR};
-        font-size: 2rem;
-        font-weight: 600;
-        padding: 0.75rem 1.25rem;
-        margin: 1.5rem 0 1rem 0;
-        border-radius: 8px;
-        background: linear-gradient(90deg, {PRIMARY_COLOR}22, transparent);
-        display: inline-block;
-        position: relative;
-    }}
-    
-    .section-header::after {{
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background: linear-gradient(90deg, {PRIMARY_COLOR}, transparent);
-    }}
-    
-    /* Dashboard metrics */
-    .metric-card {{
-        background-color: {CARD_BG_COLOR};
-        padding: 1.5rem;
-        border-radius: 12px;
-        border-left: 5px solid {PRIMARY_COLOR};
-        margin: 0.75rem 0;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }}
-    
-    .metric-card:hover {{
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }}
-    
-    /* Beautified metrics */
-    .metrics-container {{
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 20px;
-    }}
-    
+    /* Metric boxes with dark theme */
     .metric-box {{
         padding: 1.5rem;
         border-radius: 12px;
         text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        background-color: {CARD_BG_COLOR};
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -189,222 +75,80 @@ custom_css = f"""
     
     .metric-box:hover {{
         transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-    }}
-    
-    .metric-box h3 {{
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-bottom: 12px;
-    }}
-    
-    .metric-box h2 {{
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin: 0;
-    }}
-    
-    .metric-box p {{
-        margin-top: 8px;
-        color: {MUTED_TEXT};
-        font-size: 0.9rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
     }}
     
     .blue-metric {{
-        background: linear-gradient(135deg, #e6f2ff, #ffffff);
+        background: linear-gradient(135deg, #1E1E1E, #2D2D2D);
         border-bottom: 4px solid {SECONDARY_COLOR};
     }}
     
-    .blue-metric h3 {{
-        color: {SECONDARY_COLOR};
-    }}
-    
     .green-metric {{
-        background: linear-gradient(135deg, #e6fff2, #ffffff);
+        background: linear-gradient(135deg, #1E1E1E, #2D2D2D);
         border-bottom: 4px solid {PRIMARY_COLOR};
     }}
     
-    .green-metric h3 {{
-        color: {PRIMARY_COLOR};
-    }}
-    
     .orange-metric {{
-        background: linear-gradient(135deg, #fff2e6, #ffffff);
+        background: linear-gradient(135deg, #1E1E1E, #2D2D2D);
         border-bottom: 4px solid {ACCENT_COLOR};
     }}
     
-    .orange-metric h3 {{
-        color: {ACCENT_COLOR};
+    /* Dashboard metrics */
+    .metric-card {{
+        background-color: {CARD_BG_COLOR};
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 5px solid {PRIMARY_COLOR};
+        margin: 0.75rem 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        color: {TEXT_COLOR};
     }}
     
     /* Table styling */
-    .styled-table {{
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        margin: 20px 0;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    }}
-    
-    .styled-table thead th {{
-        background-color: {PRIMARY_COLOR};
-        color: white;
-        font-weight: 600;
-        text-align: left;
-        padding: 12px 15px;
-    }}
-    
-    .styled-table tbody tr {{
-        border-bottom: 1px solid #dddddd;
-        transition: background-color 0.3s;
-    }}
-    
-    .styled-table tbody tr:nth-of-type(even) {{
-        background-color: #f3f3f3;
-    }}
-    
-    .styled-table tbody tr:last-of-type {{
-        border-bottom: 2px solid {PRIMARY_COLOR};
-    }}
-    
-    .styled-table tbody tr:hover {{
-        background-color: #e6f7ff;
-    }}
-    
-    .styled-table td {{
-        padding: 12px 15px;
-    }}
-    
-    /* Sidebar styling */
-    .sidebar-content {{
-        padding: 1rem;
-        background: linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%);
-        border-radius: 8px;
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.03);
-    }}
-    
-    /* Filter sections in sidebar */
-    .filter-section {{
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #eaeaea;
-    }}
-    
-    .filter-label {{
-        color: {PRIMARY_COLOR};
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-        font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-    }}
-    
-    .filter-label svg {{
-        margin-right: 8px;
-    }}
-    
-    /* Custom buttons */
-    .custom-button {{
-        display: inline-block;
-        padding: 10px 20px;
-        background: linear-gradient(90deg, {PRIMARY_COLOR}, {PRIMARY_COLOR}dd);
-        color: white;
-        border-radius: 8px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-align: center;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        text-decoration: none;
-        margin: 10px 0;
-    }}
-    
-    .custom-button:hover {{
-        background: linear-gradient(90deg, {PRIMARY_COLOR}dd, {PRIMARY_COLOR});
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-        transform: translateY(-2px);
-    }}
-    
-    /* Tabs styling */
-    .stTabs [data-baseweb="tab-list"] {{
-        gap: 10px;
-        background-color: transparent;
-    }}
-    
-    .stTabs [data-baseweb="tab"] {{
-        padding: 10px 20px;
-        border-radius: 8px 8px 0 0;
-        background-color: #f5f5f5;
-        border: none;
+    .dataframe {{
+        background-color: {CARD_BG_COLOR};
         color: {TEXT_COLOR};
-        font-weight: 500;
     }}
     
-    .stTabs [aria-selected="true"] {{
-        background-color: {PRIMARY_COLOR}22 !important;
-        color: {PRIMARY_COLOR} !important;
-        font-weight: 600;
-        border-bottom: 3px solid {PRIMARY_COLOR};
+    .dataframe td, .dataframe th {{
+        background-color: {CARD_BG_COLOR} !important;
+        color: {TEXT_COLOR} !important;
     }}
     
-    /* Loading animation */
-    @keyframes pulse {{
-        0% {{ opacity: 0.6; }}
-        50% {{ opacity: 1; }}
-        100% {{ opacity: 0.6; }}
+    /* Input fields */
+    .stSelectbox > div, .stTextInput > div {{
+        background-color: {CARD_BG_COLOR};
+        color: {TEXT_COLOR};
     }}
     
-    .loading-animation {{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 200px;
-        background-color: #f9f9f9;
-        border-radius: 8px;
-        animation: pulse 1.5s infinite;
+    /* Headers */
+    h1, h2, h3, h4, h5, h6 {{
+        color: {TEXT_COLOR};
     }}
     
-    /* Card Grid */
-    .card-grid {{
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin: 20px 0;
+    /* Links */
+    a {{
+        color: {SECONDARY_COLOR};
     }}
     
-    .event-card {{
-        background: white;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    /* Sidebar */
+    [data-testid="stSidebar"] {{
+        background-color: #1E1E1E;
     }}
     
-    .event-card:hover {{
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    /* Charts and plots */
+    .js-plotly-plot, .plotly-graph-div {{
+        background-color: {CARD_BG_COLOR} !important;
     }}
     
-    .event-card-header {{
-        padding: 15px;
-        background: linear-gradient(90deg, {PRIMARY_COLOR}, {SECONDARY_COLOR});
-        color: white;
-        font-weight: 600;
-    }}
-    
-    .event-card-body {{
-        padding: 15px;
-    }}
-    
-    .event-card-footer {{
-        padding: 10px 15px;
-        background-color: #f5f7fa;
-        border-top: 1px solid #eaeaea;
-        font-size: 0.9rem;
-        color: {MUTED_TEXT};
+    /* Force dark theme on remaining elements */
+    div[data-testid="stDecoration"], 
+    div[data-testid="stToolbar"],
+    .stTabs [data-baseweb="tab-list"],
+    .stTabs [data-baseweb="tab"],
+    .stTabs [data-baseweb="tab-panel"] {{
+        background-color: {BG_COLOR} !important;
+        color: {TEXT_COLOR} !important;
     }}
 </style>
 """
