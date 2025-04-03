@@ -2,98 +2,376 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 import random
 from wordcloud import WordCloud
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageFilter, ImageOps, ImageEnhance
+import base64
+from io import BytesIO
+import datetime
+import altair as alt
+import zipfile
 
 # Set up the Streamlit page configuration
-st.set_page_config(page_title="InBloom", page_icon=":tulip:", layout="wide")
+st.set_page_config(
+    page_title="InBloom '25", 
+    page_icon="🌷", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Custom CSS for styling
-custom_css = """
+# Define color scheme
+PRIMARY_COLOR = "#4CAF50"
+SECONDARY_COLOR = "#1E88E5"
+ACCENT_COLOR = "#FF5722"
+BG_COLOR = "#f9f9f9"
+CARD_BG_COLOR = "#ffffff"
+TEXT_COLOR = "#333333"
+MUTED_TEXT = "#6c757d"
+
+# Custom CSS for styling with enhanced aesthetics
+custom_css = f"""
 <style>
     /* Main container styling */
-    .main {
-        padding: 1rem;
-    }
+    .main {{
+        padding: 1.5rem;
+        background-color: {BG_COLOR};
+        color: {TEXT_COLOR};
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }}
     
     /* Custom title styling */
-    .title-text {
-        color: #1E88E5;
-        font-size: 3rem;
-        font-weight: 600;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #e0e0e0;
+    .title-container {{
+        display: flex;
+        align-items: center;
+        justify-content: center;
         margin-bottom: 2rem;
-    }
+        background: linear-gradient(90deg, {PRIMARY_COLOR}22, {SECONDARY_COLOR}22);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }}
+    
+    .title-text {{
+        color: {PRIMARY_COLOR};
+        font-size: 3.5rem;
+        font-weight: 700;
+        text-align: center;
+        margin: 0;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        background: linear-gradient(90deg, {PRIMARY_COLOR}, {SECONDARY_COLOR});
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 1px;
+    }}
     
     /* Section headers */
-    .section-header {
-        color: #2E7D32;
-        font-size: 1.8rem;
-        padding: 0.5rem 0;
-        margin: 1rem 0;
-        border-left: 4px solid #4CAF50;
-        padding-left: 1rem;
-    }
+    .section-header {{
+        color: {PRIMARY_COLOR};
+        font-size: 2rem;
+        font-weight: 600;
+        padding: 0.75rem 1.25rem;
+        margin: 1.5rem 0 1rem 0;
+        border-radius: 8px;
+        background: linear-gradient(90deg, {PRIMARY_COLOR}22, transparent);
+        display: inline-block;
+        position: relative;
+    }}
+    
+    .section-header::after {{
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, {PRIMARY_COLOR}, transparent);
+    }}
     
     /* Dashboard metrics */
-    .metric-card {
-        background-color: #f8f9fa;
-        padding: 1rem;
+    .metric-card {{
+        background-color: {CARD_BG_COLOR};
+        padding: 1.5rem;
+        border-radius: 12px;
+        border-left: 5px solid {PRIMARY_COLOR};
+        margin: 0.75rem 0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }}
+    
+    .metric-card:hover {{
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }}
+    
+    /* Beautified metrics */
+    .metrics-container {{
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 20px;
+    }}
+    
+    .metric-box {{
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.3s ease;
+    }}
+    
+    .metric-box:hover {{
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }}
+    
+    .metric-box h3 {{
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }}
+    
+    .metric-box h2 {{
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+    }}
+    
+    .metric-box p {{
+        margin-top: 8px;
+        color: {MUTED_TEXT};
+        font-size: 0.9rem;
+    }}
+    
+    .blue-metric {{
+        background: linear-gradient(135deg, #e6f2ff, #ffffff);
+        border-bottom: 4px solid {SECONDARY_COLOR};
+    }}
+    
+    .blue-metric h3 {{
+        color: {SECONDARY_COLOR};
+    }}
+    
+    .green-metric {{
+        background: linear-gradient(135deg, #e6fff2, #ffffff);
+        border-bottom: 4px solid {PRIMARY_COLOR};
+    }}
+    
+    .green-metric h3 {{
+        color: {PRIMARY_COLOR};
+    }}
+    
+    .orange-metric {{
+        background: linear-gradient(135deg, #fff2e6, #ffffff);
+        border-bottom: 4px solid {ACCENT_COLOR};
+    }}
+    
+    .orange-metric h3 {{
+        color: {ACCENT_COLOR};
+    }}
+    
+    /* Table styling */
+    .styled-table {{
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 20px 0;
         border-radius: 8px;
-        border-left: 4px solid #1E88E5;
-        margin: 0.5rem 0;
-    }
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }}
+    
+    .styled-table thead th {{
+        background-color: {PRIMARY_COLOR};
+        color: white;
+        font-weight: 600;
+        text-align: left;
+        padding: 12px 15px;
+    }}
+    
+    .styled-table tbody tr {{
+        border-bottom: 1px solid #dddddd;
+        transition: background-color 0.3s;
+    }}
+    
+    .styled-table tbody tr:nth-of-type(even) {{
+        background-color: #f3f3f3;
+    }}
+    
+    .styled-table tbody tr:last-of-type {{
+        border-bottom: 2px solid {PRIMARY_COLOR};
+    }}
+    
+    .styled-table tbody tr:hover {{
+        background-color: #e6f7ff;
+    }}
+    
+    .styled-table td {{
+        padding: 12px 15px;
+    }}
     
     /* Sidebar styling */
-    .sidebar-content {
-        /* Reduce the padding to minimize white space */
-        padding: 0.5rem;
-        /* Optionally, remove or reduce top margin:
-           margin-top: -10px; 
-        */
-        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
-    }
+    .sidebar-content {{
+        padding: 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%);
+        border-radius: 8px;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.03);
+    }}
     
-    /* Filter labels */
-    .filter-label {
-        color: #424242;
+    /* Filter sections in sidebar */
+    .filter-section {{
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eaeaea;
+    }}
+    
+    .filter-label {{
+        color: {PRIMARY_COLOR};
         font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
+        margin-bottom: 0.75rem;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }}
     
-    /* Download button */
-    .download-btn {
-        background-color: #4CAF50;
+    .filter-label svg {{
+        margin-right: 8px;
+    }}
+    
+    /* Custom buttons */
+    .custom-button {{
+        display: inline-block;
+        padding: 10px 20px;
+        background: linear-gradient(90deg, {PRIMARY_COLOR}, {PRIMARY_COLOR}dd);
         color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
+        border-radius: 8px;
         border: none;
+        font-weight: 600;
         cursor: pointer;
-        transition: background-color 0.3s;
-    }
+        transition: all 0.3s ease;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        text-decoration: none;
+        margin: 10px 0;
+    }}
     
-    .download-btn:hover {
-        background-color: #45a049;
-    }
+    .custom-button:hover {{
+        background: linear-gradient(90deg, {PRIMARY_COLOR}dd, {PRIMARY_COLOR});
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }}
+    
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 10px;
+        background-color: transparent;
+    }}
+    
+    .stTabs [data-baseweb="tab"] {{
+        padding: 10px 20px;
+        border-radius: 8px 8px 0 0;
+        background-color: #f5f5f5;
+        border: none;
+        color: {TEXT_COLOR};
+        font-weight: 500;
+    }}
+    
+    .stTabs [aria-selected="true"] {{
+        background-color: {PRIMARY_COLOR}22 !important;
+        color: {PRIMARY_COLOR} !important;
+        font-weight: 600;
+        border-bottom: 3px solid {PRIMARY_COLOR};
+    }}
+    
+    /* Loading animation */
+    @keyframes pulse {{
+        0% {{ opacity: 0.6; }}
+        50% {{ opacity: 1; }}
+        100% {{ opacity: 0.6; }}
+    }}
+    
+    .loading-animation {{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        animation: pulse 1.5s infinite;
+    }}
+    
+    /* Card Grid */
+    .card-grid {{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }}
+    
+    .event-card {{
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }}
+    
+    .event-card:hover {{
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }}
+    
+    .event-card-header {{
+        padding: 15px;
+        background: linear-gradient(90deg, {PRIMARY_COLOR}, {SECONDARY_COLOR});
+        color: white;
+        font-weight: 600;
+    }}
+    
+    .event-card-body {{
+        padding: 15px;
+    }}
+    
+    .event-card-footer {{
+        padding: 10px 15px;
+        background-color: #f5f7fa;
+        border-top: 1px solid #eaeaea;
+        font-size: 0.9rem;
+        color: {MUTED_TEXT};
+    }}
 </style>
 """
 
 # Add the custom CSS to the page
 st.markdown(custom_css, unsafe_allow_html=True)
 
-# Update the title styling
-st.markdown('<p class="title-text">InBloom</p>', unsafe_allow_html=True)
+# Display the custom title
+st.markdown('<div class="title-container"><h1 class="title-text">InBloom Festival 2025</h1></div>', unsafe_allow_html=True)
 
-# Enhanced Sidebar with custom styling
-with st.sidebar:
-    st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
-    st.image("inbloom_logo.png", use_container_width=True)
-    st.markdown("<h1 style='text-align: center; color: #4CAF50; font-size: 2rem;'>InBloom '25</h1>", unsafe_allow_html=True)
-    st.markdown('<p class="filter-label">Navigation</p>', unsafe_allow_html=True)
-    page = st.radio("Go to", ["Dataset", "Dashboard", "Text Analysis", "Image Processing"])
-    st.markdown("---")
+# Helper function to convert an image to base64
+def get_image_as_base64(path):
+    try:
+        with open(path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except:
+        # Return a default image if file not found
+        return None
+
+# Try to load logo, fallback to a text header if image not found
+try:
+    logo_base64 = get_image_as_base64("inbloom_logo.png")
+    if logo_base64:
+        logo_html = f'<img src="data:image/png;base64,{logo_base64}" style="width:100%; max-width:200px; margin-bottom:15px;">'
+    else:
+        logo_html = '<h2 style="text-align:center; color:#4CAF50; margin-top:10px;">InBloom</h2>'
+except:
+    logo_html = '<h2 style="text-align:center; color:#4CAF50; margin-top:10px;">InBloom</h2>'
 
 # ------------------ Dataset Generation Function ------------------
 def generate_dataset():
@@ -119,8 +397,10 @@ def generate_dataset():
         "Needs improvement in planning."
     ]
     
-    first_names = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Drew", "Jamie", "Robin", "Riley", "Cameron"]
-    last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Wilson"]
+    first_names = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Drew", "Jamie", "Robin", "Riley", "Cameron",
+                   "Aditya", "Priya", "Raj", "Neha", "Vikram", "Anjali", "Arjun", "Divya", "Karthik", "Meera"]
+    last_names = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Wilson",
+                  "Sharma", "Patel", "Kumar", "Singh", "Gupta", "Reddy", "Verma", "Shah", "Joshi", "Nair"]
 
     data = []
     for i in range(250):
@@ -136,239 +416,827 @@ def generate_dataset():
         feedback = random.choice(feedback_options)
         age = random.randint(18, 25)  # Typical college age
         score = random.randint(60, 100)  # Performance/participation score
+        gender = random.choice(["Male", "Female", "Non-binary"])
+        registration_type = random.choice(["Online", "On-site"])
+        satisfaction = random.randint(1, 5)  # 5-point scale
         
         data.append({
             "ParticipantID": participant_id,
             "Name": name,
             "Age": age,
+            "Gender": gender,
             "College": college,
             "State": state,
             "Event": event,
             "Day": day,
             "Time": time_str,
             "Score": score,
-            "Feedback": feedback
+            "Registration": registration_type,
+            "Satisfaction": satisfaction,
+            "Feedback": feedback,
+            "TotalUsers": random.randint(2500, 3500)
         })
     df = pd.DataFrame(data)
     return df
 
-# Generate and store dataset in session state for persistence
-if "dataset" not in st.session_state:
-    st.session_state["dataset"] = generate_dataset()
-df = st.session_state["dataset"]
+# Initialize session state and dataset at the very beginning
+if 'dataset' not in st.session_state:
+    st.session_state['dataset'] = generate_dataset()
 
-# ------------------ Dataset Section ------------------
-if page == "Dataset":
-    st.markdown('<h2 class="section-header">Dataset</h2>', unsafe_allow_html=True)
+# Get the dataset
+df = st.session_state['dataset']
+
+# Define filter options globally
+all_events = sorted(df["Event"].unique())
+all_states = sorted(df["State"].unique())
+all_colleges = sorted(df["College"].unique())
+all_days = sorted(df["Day"].unique())
+
+# Enhanced Sidebar with custom styling
+with st.sidebar:
+    st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
+    st.markdown(logo_html, unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #4CAF50; font-size: 1.8rem; margin-bottom:20px;'>Cultural Festival '25</h1>", unsafe_allow_html=True)
+    
+    st.markdown('<div class="filter-section">', unsafe_allow_html=True)
+    st.markdown('<p class="filter-label">📊 Navigation</p>', unsafe_allow_html=True)
+    page = st.radio("", ["Home", "Dataset", "Dashboard", "Text Analysis", "Image Processing", "Event Schedule"])
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Only show filters if on Dashboard page
+    if page == "Dashboard":
+        st.markdown('<div class="filter-section">', unsafe_allow_html=True)
+        st.markdown('<p class="filter-label">🔍 Filters</p>', unsafe_allow_html=True)
+        
+        # Event filter with search and select all option
+        selected_event = st.multiselect(
+            "Select Event", 
+            options=["All"] + all_events,
+            default=["All"]
+        )
+        if "All" in selected_event:
+            selected_event = all_events
+            
+        # State filter with search
+        selected_state = st.multiselect(
+            "Select State", 
+            options=["All"] + all_states,
+            default=["All"]
+        )
+        if "All" in selected_state:
+            selected_state = all_states
+            
+        # College filter
+        all_colleges = list(df["College"].unique())
+        selected_college = st.multiselect(
+            "Select College", 
+            options=["All"] + all_colleges,
+            default=["All"]
+        )
+        if "All" in selected_college:
+            selected_college = all_colleges
+            
+        # Day filter
+        all_days = list(df["Day"].unique())
+        selected_day = st.multiselect(
+            "Select Day", 
+            options=["All"] + all_days,
+            default=["All"]
+        )
+        if "All" in selected_day:
+            selected_day = all_days
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Display current time
+    now = datetime.datetime.now()
+    st.markdown(f"<p style='text-align:center; color:{MUTED_TEXT}; font-size:0.9rem; margin-top:30px;'>📅 {now.strftime('%B %d, %Y')}<br>⏰ {now.strftime('%I:%M %p')}</p>", unsafe_allow_html=True)
+    
+    # Footer
+    st.markdown("<hr style='margin:30px 0 15px 0; opacity:0.3;'>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#888; font-size:0.8rem;'>© 2025 InBloom Festival<br>All rights reserved</p>", unsafe_allow_html=True)
+
+# ------------------ Home Section ------------------
+if page == "Home":
+    # Welcome message and stats overview
+    st.markdown('<h2 class="section-header">Welcome to InBloom Festival 2025</h2>', unsafe_allow_html=True)
+    
+    # Quick stats
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(f"""
+        <div class="metric-box blue-metric">
+            <h3 style="color: #1E88E5;">Total Participants</h3>
+            <h2 style="color: #000000;">{len(df)}</h2>
+            <p style="color: #666666;">From {df['College'].nunique()} colleges</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with col2:
+        st.markdown(f"""
+        <div class="metric-box green-metric">
+            <h3 style="color: #4CAF50;">Events</h3>
+            <h2 style="color: #000000;">{df['Event'].nunique()}</h2>
+            <p style="color: #666666;">Across {df['Day'].nunique()} days</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with col3:
+        st.markdown(f"""
+        <div class="metric-box orange-metric">
+            <h3 style="color: #FF9800;">States Represented</h3>
+            <h2 style="color: #000000;">{df['State'].nunique()}</h2>
+            <p style="color: #666666;">Pan-India participation</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # About the festival
     st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.write("Generated Dataset for InBloom '25")
-    st.dataframe(df)
+    st.markdown("""
+    ### About InBloom '25
+    
+    InBloom is an annual cultural festival that celebrates artistic expression, cultural diversity, and creative talent across colleges nationwide. This year's festival features a rich lineup of events including dance, music, drama, literary arts, and more.
+    
+    ### Highlights
+    
+    - **Pan-India Participation**: Students from across 12 states
+    - **Diverse Events**: 10 unique categories of cultural events
+    - **5-Day Extravaganza**: Comprehensive schedule of competitions
+    - **Professional Judging**: Industry experts evaluating performances
+    - **Amazing Prizes**: Recognition for top talents
+    
+    Use the navigation panel to explore participant data, visualize trends, analyze feedback, and process event imagery.
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Featured events section
+    st.markdown('<h2 class="section-header">Featured Events</h2>', unsafe_allow_html=True)
+
+    featured_events = ["Solo Dance", "Group Dance", "Singing", "Drama"]
+    event_descriptions = {
+        "Solo Dance": "Showcase individual dance talents across various styles from classical to contemporary.",
+        "Group Dance": "Team performances highlighting coordination, choreography, and creative expression.",
+        "Singing": "Vocal performances spanning genres from classical to modern pop and rock.",
+        "Drama": "Theatrical presentations including one-act plays, mono-acting, and improvisations."
+    }
+
+    for event in featured_events:
+        event_data = df[df["Event"] == event]
+        participants = len(event_data)
+        avg_score = round(event_data["Score"].mean(), 1)
+        
+        st.markdown(f"""
+        <div style="background: white; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <div style="padding: 15px; background: linear-gradient(90deg, #4CAF50, #1E88E5); color: white; font-weight: 600; border-radius: 10px 10px 0 0;">
+                {event}
+            </div>
+            <div style="padding: 15px; background: white;">
+                <p style="color: #333333; margin-bottom: 10px;">{event_descriptions[event]}</p>
+                <p style="color: #333333; margin-bottom: 10px;"><strong>Participants:</strong> {participants}</p>
+                <p style="color: #333333; margin-bottom: 10px;"><strong>Average Score:</strong> {avg_score}/100</p>
+            </div>
+            <div style="padding: 10px 15px; background-color: #f5f7fa; border-top: 1px solid #eaeaea; color: #666666; font-size: 0.9rem; border-radius: 0 0 10px 10px;">
+                Featured on {', '.join(event_data['Day'].unique())}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Upcoming highlights
+    st.markdown('<h2 class="section-header">Festival Highlights</h2>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+    
+    # Create tabs for different content
+    tab1, tab2, tab3 = st.tabs(["📈 Participation Trends", "🏆 Top Performers", "📅 Schedule"])
+    
+    with tab1:
+        # Participant distribution by state
+        state_counts = df["State"].value_counts().reset_index()
+        state_counts.columns = ["State", "Count"]
+        
+        fig = px.choropleth(
+            state_counts,
+            locations="State",
+            locationmode="country names",
+            color="Count",
+            hover_name="State",
+            color_continuous_scale="Viridis",
+            title="Participant Distribution"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with tab2:
+        # Top scores by event
+        top_scores = df.sort_values("Score", ascending=False).head(10)
+        
+        fig = px.bar(
+            top_scores,
+            x="Name",
+            y="Score",
+            color="Event",
+            text="Score",
+            labels={"Score": "Performance Score", "Name": "Participant"},
+            title="Top 10 Performers Across All Events"
+        )
+        fig.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with tab3:
+        # Event schedule
+        event_schedule = df.groupby(["Day", "Event"]).size().reset_index(name="Participants")
+        event_schedule = event_schedule.sort_values(["Day", "Participants"], ascending=[True, False])
+        
+        # Custom styling for the table
+        st.markdown("""
+        <table class="styled-table">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Event</th>
+                    <th>Participants</th>
+                </tr>
+            </thead>
+            <tbody>
+        """, unsafe_allow_html=True)
+        
+        for _, row in event_schedule.iterrows():
+            st.markdown(f"""
+                <tr>
+                    <td>{row['Day']}</td>
+                    <td>{row['Event']}</td>
+                    <td>{row['Participants']}</td>
+                </tr>
+            """, unsafe_allow_html=True)
+            
+        st.markdown("""
+            </tbody>
+        </table>
+        """, unsafe_allow_html=True)
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        "Download CSV",
-        data=csv,
-        file_name="inbloom_dataset.csv",
-        mime="text/csv",
-        help="Click to download the dataset as CSV",
-    )
+# ------------------ Dataset Section ------------------
+elif page == "Dataset":
+    st.markdown('<h2 class="section-header">Dataset Explorer</h2>', unsafe_allow_html=True)
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+    
+    # Tabs for different views of the data
+    tab1, tab2, tab3 = st.tabs(["📋 Raw Data", "📊 Summary Statistics", "🔍 Search"])
+    
+    with tab1:
+        st.write("Complete participant data from InBloom '25")
+        st.dataframe(df, use_container_width=True)
+        
+        # Download options
+        col1, col2 = st.columns(2)
+        with col1:
+            csv = df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                "Download as CSV",
+                data=csv,
+                file_name="inbloom_dataset.csv",
+                mime="text/csv",
+                help="Download the complete dataset as CSV file",
+            )
+        
+        with col2:
+            # Convert to Excel
+            buffer = BytesIO()
+            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                df.to_excel(writer, sheet_name='InBloom_Data', index=False)
+            excel_data = buffer.getvalue()
+            
+            st.download_button(
+                "Download as Excel",
+                data=excel_data,
+                file_name="inbloom_dataset.xlsx",
+                mime="application/vnd.ms-excel",
+                help="Download the complete dataset as Excel file",
+            )
+    
+    with tab2:
+        # Summary statistics
+        st.write("Key statistical measures for numerical columns")
+        st.dataframe(df.describe().round(2), use_container_width=True)
+        
+        # Distribution of categorical variables
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("Event Distribution")
+            event_counts = df["Event"].value_counts().reset_index()
+            event_counts.columns = ["Event", "Count"]
+            
+            fig = px.pie(
+                event_counts, 
+                values="Count", 
+                names="Event", 
+                hole=0.4,
+                color_discrete_sequence=px.colors.qualitative.Pastel
+            )
+            fig.update_traces(textposition='inside', textinfo='percent+label')
+            fig.update_layout(uniformtext_minsize=12, uniformtext_mode='hide')
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            st.subheader("Day-wise Distribution")
+            day_counts = df["Day"].value_counts().reset_index()
+            day_counts.columns = ["Day", "Count"]
+            
+            fig = px.bar(
+                day_counts,
+                x="Day",
+                y="Count",
+                color="Day",
+                text="Count"
+            )
+            fig.update_traces(texttemplate='%{text}', textposition='outside')
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Gender distribution
+        st.subheader("Participant Demographics")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            gender_counts = df["Gender"].value_counts().reset_index()
+            gender_counts.columns = ["Gender", "Count"]
+            
+            fig = px.pie(
+                gender_counts,
+                values="Count",
+                names="Gender",
+                title="Gender Distribution",
+                color_discrete_sequence=px.colors.qualitative.Pastel
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Age distribution
+            fig = px.histogram(
+                df,
+                x="Age",
+                nbins=8,
+                title="Age Distribution",
+                color_discrete_sequence=["#4CAF50"]
+            )
+            fig.update_layout(bargap=0.1)
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with tab3:
+        # Search functionality
+        st.write("Search for specific participants or filter by criteria")
+        
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            search_term = st.text_input("Search by name or ID", "")
+        
+        with col2:
+            search_event = st.selectbox("Filter by event", ["All"] + list(df["Event"].unique()))
+        
+        # Apply filters
+        filtered_results = df.copy()
+        if search_term:
+            filtered_results = filtered_results[
+                filtered_results["Name"].str.contains(search_term, case=False) | 
+                filtered_results["ParticipantID"].str.contains(search_term, case=False)
+            ]
+        
+        if search_event != "All":
+            filtered_results = filtered_results[filtered_results["Event"] == search_event]
+        
+        # Display filtered results
+        st.write(f"Found {len(filtered_results)} matching results:")
+        st.dataframe(filtered_results, use_container_width=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ------------------ Dashboard Section ------------------
 elif page == "Dashboard":
-    st.markdown('<h2 class="section-header">Dashboard</h2>', unsafe_allow_html=True)
-    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.write("Visualize participation trends with interactive filters.")
-
-    # --- FIRST, define your filters and filtered_df ---
-    selected_event = st.sidebar.multiselect("Select Event", options=df["Event"].unique(), default=df["Event"].unique())
-    selected_state = st.sidebar.multiselect("Select State", options=df["State"].unique(), default=df["State"].unique())
-    selected_college = st.sidebar.multiselect("Select College", options=df["College"].unique(), default=df["College"].unique())
-    selected_day = st.sidebar.multiselect("Select Day", options=df["Day"].unique(), default=df["Day"].unique())
-
+    st.markdown('<h2 class="section-header">Analytics Dashboard</h2>', unsafe_allow_html=True)
+    
+    # Apply filters to dataset
     filtered_df = df[
         (df["Event"].isin(selected_event)) &
-        (df["State"].isin(selected_state)) &
-        (df["College"].isin(selected_college)) &
-        (df["Day"].isin(selected_day))
+        (df["State"].isin(selected_state))
     ]
-
-    # --- THEN, display your metrics that use filtered_df ---
-    col1, col2, col3 = st.columns(3)
+    
+    # Overview metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
     with col1:
         st.markdown(f"""
-        <div style="padding:1.2rem; background-color:#f0f8ff; border-radius:8px; text-align:center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="color:#1E88E5; margin-bottom:8px; font-size:1.1rem;">Total Participants</h3>
-            <h2 style="color:#000000; margin:0; font-size:2rem;">{len(filtered_df)}</h2>
+        <div class="metric-box primary-metric">
+            <h3>Total Participants</h3>
+            <h2>{len(filtered_df)}</h2>
+            <p>From {filtered_df['College'].nunique()} colleges</p>
         </div>
         """, unsafe_allow_html=True)
-
+    
     with col2:
-        avg_score = filtered_df["Score"].mean() if not filtered_df.empty else 0
+        avg_score = filtered_df['Score'].mean()
         st.markdown(f"""
-        <div style="padding:1.2rem; background-color:#f0fff0; border-radius:8px; text-align:center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="color:#2E7D32; margin-bottom:8px; font-size:1.1rem;">Average Score</h3>
-            <h2 style="color:#000000; margin:0; font-size:2rem;">{avg_score:.1f}</h2>
+        <div class="metric-box secondary-metric">
+            <h3>Average Score</h3>
+            <h2>{avg_score:.1f}</h2>
+            <p>Out of 100</p>
         </div>
         """, unsafe_allow_html=True)
-
+    
     with col3:
-        event_count = filtered_df["Event"].nunique() if not filtered_df.empty else 0
+        satisfaction = filtered_df['Satisfaction'].mean()
         st.markdown(f"""
-        <div style="padding:1.2rem; background-color:#fff0f0; border-radius:8px; text-align:center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="color:#C62828; margin-bottom:8px; font-size:1.1rem;">Events Count</h3>
-            <h2 style="color:#000000; margin:0; font-size:2rem;">{event_count}</h2>
+        <div class="metric-box accent-metric">
+            <h3>Satisfaction Rate</h3>
+            <h2>{satisfaction:.1f}%</h2>
+            <p>Based on feedback</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        total_events = filtered_df['Event'].nunique()
+        st.markdown(f"""
+        <div class="metric-box info-metric">
+            <h3>Active Events</h3>
+            <h2>{total_events}</h2>
+            <p>Across {filtered_df['Day'].nunique()} days</p>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Create tabs for different visualizations
+    viz_tab1, viz_tab2, viz_tab3 = st.tabs(["📊 Participation", "📈 Performance", "🎯 Demographics"])
+    
+    with viz_tab1:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Event-wise participation
+            event_participation = filtered_df['Event'].value_counts()
+            fig = px.bar(
+                x=event_participation.index,
+                y=event_participation.values,
+                title="Event-wise Participation",
+                labels={'x': 'Event', 'y': 'Participants'},
+                color=event_participation.values,
+                color_continuous_scale='Viridis'
+            )
+            fig.update_layout(showlegend=False)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Day-wise trend
+            day_trend = filtered_df.groupby('Day').size().reset_index(name='count')
+            fig = px.line(
+                day_trend,
+                x='Day',
+                y='count',
+                title="Daily Participation Trend",
+                markers=True,
+                line_shape='spline'
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-    st.write("Filtered Dataset:", filtered_df.shape)
-    st.dataframe(filtered_df)
+    with viz_tab2:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Score distribution
+            fig = px.histogram(
+                filtered_df,
+                x='Score',
+                nbins=20,
+                title="Score Distribution",
+                color_discrete_sequence=['#1E88E5']
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Event-wise average scores
+            avg_scores = filtered_df.groupby('Event')['Score'].mean().sort_values(ascending=True)
+            fig = px.bar(
+                x=avg_scores.values,
+                y=avg_scores.index,
+                orientation='h',
+                title="Average Scores by Event",
+                color=avg_scores.values,
+                color_continuous_scale='Viridis'
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-    # ------------------ Chart Layout in Columns ------------------
-    # 1. Day-wise Participation and 2. Event-wise Participation
-    colA, colB = st.columns(2)
-    with colA:
-        day_counts = filtered_df["Day"].value_counts().sort_index()
-        fig1, ax1 = plt.subplots()
-        ax1.bar(day_counts.index, day_counts.values, color="skyblue")
-        ax1.set_title("Day-wise Participation")
-        ax1.set_xlabel("Day")
-        ax1.set_ylabel("Number of Participants")
-        st.pyplot(fig1)
-
-    with colB:
-        event_counts = filtered_df["Event"].value_counts()
-        fig2, ax2 = plt.subplots()
-        ax2.bar(event_counts.index, event_counts.values, color="coral")
-        ax2.set_title("Event-wise Participation")
-        ax2.set_xlabel("Event")
-        ax2.set_ylabel("Number of Participants")
-        plt.xticks(rotation=45)
-        st.pyplot(fig2)
-
-    # 3. College-wise Participation and 4. State-wise Participation
-    colC, colD = st.columns(2)
-    with colC:
-        college_counts = filtered_df["College"].value_counts()
-        fig3, ax3 = plt.subplots()
-        ax3.bar(college_counts.index, college_counts.values, color="lightgreen")
-        ax3.set_title("College-wise Participation")
-        ax3.set_xlabel("College")
-        ax3.set_ylabel("Number of Participants")
-        plt.xticks(rotation=45)
-        st.pyplot(fig3)
-
-    with colD:
-        state_counts = filtered_df["State"].value_counts()
-        fig4, ax4 = plt.subplots()
-        ax4.bar(state_counts.index, state_counts.values, color="plum")
-        ax4.set_title("State-wise Participation")
-        ax4.set_xlabel("State")
-        ax4.set_ylabel("Number of Participants")
-        st.pyplot(fig4)
-
-    # 5. Participation Time Distribution & 6. Age Distribution
-    colE, colF = st.columns(2)
-    with colE:
-        times = pd.to_datetime(filtered_df["Time"], format="%H:%M").dt.hour
-        fig5, ax5 = plt.subplots()
-        ax5.hist(times, bins=range(10, 20), color="gold", edgecolor="black")
-        ax5.set_title("Participation Time Distribution")
-        ax5.set_xlabel("Hour of the Day")
-        ax5.set_ylabel("Frequency")
-        st.pyplot(fig5)
-
-    with colF:
-        fig6, ax6 = plt.subplots()
-        ax6.hist(filtered_df["Age"], bins=8, color="lightblue", edgecolor="black")
-        ax6.set_title("Age Distribution of Participants")
-        ax6.set_xlabel("Age")
-        ax6.set_ylabel("Frequency")
-        st.pyplot(fig6)
-
-    # 7. Score Distribution & 8. Average Score by Event
-    colG, colH = st.columns(2)
-    with colG:
-        fig7, ax7 = plt.subplots()
-        ax7.hist(filtered_df["Score"], bins=10, color="salmon", edgecolor="black")
-        ax7.set_title("Score Distribution")
-        ax7.set_xlabel("Score")
-        ax7.set_ylabel("Frequency")
-        st.pyplot(fig7)
-
-    with colH:
-        if not filtered_df.empty:
-            avg_scores = filtered_df.groupby("Event")["Score"].mean().sort_values(ascending=False)
-            fig8, ax8 = plt.subplots()
-            ax8.bar(avg_scores.index, avg_scores.values, color="lightgreen")
-            ax8.set_title("Average Score by Event")
-            ax8.set_xlabel("Event")
-            ax8.set_ylabel("Average Score")
-            plt.xticks(rotation=45)
-            st.pyplot(fig8)
-        else:
-            st.write("No data available for selected filters.")
+    with viz_tab3:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Gender distribution
+            gender_dist = filtered_df['Gender'].value_counts()
+            fig = px.pie(
+                values=gender_dist.values,
+                names=gender_dist.index,
+                title="Gender Distribution",
+                hole=0.4,
+                color_discrete_sequence=px.colors.qualitative.Set3
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Age distribution
+            fig = px.box(
+                filtered_df,
+                y='Age',
+                x='Event',
+                title="Age Distribution by Event",
+                color='Event',
+                color_discrete_sequence=px.colors.qualitative.Set3
+            )
+            fig.update_layout(showlegend=False)
+            st.plotly_chart(fig, use_container_width=True)
 
 # ------------------ Text Analysis Section ------------------
 elif page == "Text Analysis":
-    st.markdown('<h2 class="section-header">Text Analysis</h2>', unsafe_allow_html=True)
-    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.write("Generate a word cloud based on event-wise feedback.")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    event_option = st.selectbox("Select Event for Feedback Analysis", options=df["Event"].unique())
-    event_feedback = df[df["Event"] == event_option]["Feedback"].str.cat(sep=" ")
-
-    if event_feedback.strip():
-        wc = WordCloud(width=800, height=400, background_color='white').generate(event_feedback)
-        fig_wc, ax_wc = plt.subplots(figsize=(10, 5))
-        ax_wc.imshow(wc, interpolation="bilinear")
-        ax_wc.axis("off")
-        ax_wc.set_title(f"Word Cloud for {event_option}")
-        st.pyplot(fig_wc)
-    else:
-        st.write("No feedback available for this event.")
+    st.markdown('<h2 class="section-header">Feedback Analysis</h2>', unsafe_allow_html=True)
+    
+    # Create tabs for different text analysis views
+    text_tab1, text_tab2 = st.tabs(["🔤 Word Cloud", "📊 Sentiment Analysis"])
+    
+    with text_tab1:
+        col1, col2 = st.columns([1, 2])
+        
+        with col1:
+            selected_event_feedback = st.selectbox(
+                "Select Event",
+                options=df["Event"].unique(),
+                key="wordcloud_event"
+            )
+            
+            min_word_length = st.slider(
+                "Minimum Word Length",
+                min_value=3,
+                max_value=10,
+                value=4
+            )
+            
+            background_color = st.color_picker(
+                "Background Color",
+                value="#ffffff"
+            )
+        
+        with col2:
+            event_feedback = df[df["Event"] == selected_event_feedback]["Feedback"].str.cat(sep=" ")
+            if event_feedback.strip():
+                wc = WordCloud(
+                    width=800,
+                    height=400,
+                    background_color=background_color,
+                    min_word_length=min_word_length,
+                    colormap='viridis'
+                ).generate(event_feedback)
+                
+                fig_wc, ax_wc = plt.subplots(figsize=(10, 5))
+                ax_wc.imshow(wc, interpolation="bilinear")
+                ax_wc.axis("off")
+                st.pyplot(fig_wc)
+            else:
+                st.info("No feedback available for this event.")
+    
+    with text_tab2:
+        # Simple sentiment analysis based on predefined positive/negative words
+        positive_words = set(['excellent', 'amazing', 'great', 'good', 'wonderful', 'fantastic'])
+        negative_words = set(['poor', 'bad', 'disappointing', 'terrible', 'awful', 'horrible'])
+        
+        def analyze_sentiment(text):
+            words = set(text.lower().split())
+            pos_count = len(words.intersection(positive_words))
+            neg_count = len(words.intersection(negative_words))
+            return 'Positive' if pos_count > neg_count else 'Negative' if neg_count > pos_count else 'Neutral'
+        
+        sentiment_results = df['Feedback'].apply(analyze_sentiment).value_counts()
+        
+        fig = px.pie(
+            values=sentiment_results.values,
+            names=sentiment_results.index,
+            title="Overall Feedback Sentiment",
+            color_discrete_sequence=['#4CAF50', '#FFC107', '#F44336']
+        )
+        st.plotly_chart(fig)
 
 # ------------------ Image Processing Section ------------------
 elif page == "Image Processing":
-    st.markdown('<h2 class="section-header">Image Processing</h2>', unsafe_allow_html=True)
-    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.write("Upload event-related images and apply custom processing.")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    selected_gallery_day = st.selectbox("Select Day for Image Gallery", options=df["Day"].unique())
-    uploaded_images = st.file_uploader("Upload Images", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
+    st.markdown('<h2 class="section-header">Event Image Processing</h2>', unsafe_allow_html=True)
     
-    if uploaded_images:
-        st.subheader("Original Images")
+    uploaded_files = st.file_uploader(
+        "Upload Event Images",
+        type=['png', 'jpg', 'jpeg'],
+        accept_multiple_files=True
+    )
+    
+    if uploaded_files:
+        # Image processing options
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            filter_option = st.selectbox(
+                "Select Filter",
+                ["Original", "Grayscale", "Blur", "Edge Enhance", "Sharpen", "Emboss"]
+            )
+        
+        with col2:
+            brightness = st.slider("Brightness", 0.0, 2.0, 1.0, 0.1)
+        
+        with col3:
+            contrast = st.slider("Contrast", 0.0, 2.0, 1.0, 0.1)
+        
+        # Display images in grid
         cols = st.columns(3)
-        for i, img_file in enumerate(uploaded_images):
-            image = Image.open(img_file)
-            cols[i % 3].image(image, caption="Original", use_container_width=True)
+        for idx, uploaded_file in enumerate(uploaded_files):
+            with cols[idx % 3]:
+                img = Image.open(uploaded_file)
+                
+                # Apply selected filter
+                if filter_option == "Grayscale":
+                    img = ImageOps.grayscale(img)
+                elif filter_option == "Blur":
+                    img = img.filter(ImageFilter.BLUR)
+                elif filter_option == "Edge Enhance":
+                    img = img.filter(ImageFilter.EDGE_ENHANCE)
+                elif filter_option == "Sharpen":
+                    img = img.filter(ImageFilter.SHARPEN)
+                elif filter_option == "Emboss":
+                    img = img.filter(ImageFilter.EMBOSS)
+                
+                # Apply brightness and contrast
+                enhancer = ImageEnhance.Brightness(img)
+                img = enhancer.enhance(brightness)
+                enhancer = ImageEnhance.Contrast(img)
+                img = enhancer.enhance(contrast)
+                
+                st.image(img, caption=f"Processed Image {idx+1}", use_column_width=True)
         
-        st.subheader("Apply Custom Image Processing")
-        processing_option = st.selectbox(
-            "Select Processing Option", 
-            options=["Grayscale", "Blur", "Edge Enhance", "Invert"]
-        )
-        processed_images = []
-        for img_file in uploaded_images:
-            image = Image.open(img_file)
-            if processing_option == "Grayscale":
-                processed = ImageOps.grayscale(image)
-            elif processing_option == "Blur":
-                processed = image.filter(ImageFilter.BLUR)
-            elif processing_option == "Edge Enhance":
-                processed = image.filter(ImageFilter.EDGE_ENHANCE)
-            elif processing_option == "Invert":
-                processed = ImageOps.invert(image.convert("RGB"))
-            processed_images.append(processed)
-        
-        st.subheader("Processed Images")
-        cols_proc = st.columns(3)
-        for i, proc_img in enumerate(processed_images):
-            cols_proc[i % 3].image(proc_img, caption=processing_option, use_container_width=True)
+        # Add download button for processed images
+        if st.button("Download Processed Images"):
+            # Create a ZIP file containing all processed images
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+                for idx, uploaded_file in enumerate(uploaded_files):
+                    img = Image.open(uploaded_file)
+                    # Apply the same processing as above
+                    # Save to zip
+                    img_buffer = BytesIO()
+                    img.save(img_buffer, format="PNG")
+                    zip_file.writestr(f"processed_image_{idx+1}.png", img_buffer.getvalue())
+            
+            st.download_button(
+                "Download ZIP",
+                data=zip_buffer.getvalue(),
+                file_name="processed_images.zip",
+                mime="application/zip"
+            )
     else:
-        st.write("No images uploaded.")
+        st.info("Upload some images to get started!")
+
+# ------------------ Event Schedule Section ------------------
+elif page == "Event Schedule":
+    st.markdown('<h2 class="section-header">Event Schedule</h2>', unsafe_allow_html=True)
+    
+    # Create schedule dataframe
+    schedule_df = df.groupby(['Day', 'Event', 'Time']).size().reset_index(name='Participants')
+    schedule_df = schedule_df.sort_values(['Day', 'Time'])
+    
+    # Custom CSS for better timeline visualization
+    st.markdown("""
+    <style>
+    .timeline-container {
+        margin: 20px 0;
+        padding: 20px;
+        background: #1a1a1a;
+        border-radius: 10px;
+    }
+    
+    .schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background: #2d2d2d;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .schedule-table th {
+        background: #4CAF50;
+        color: white;
+        padding: 12px;
+        text-align: left;
+    }
+    
+    .schedule-table td {
+        padding: 12px;
+        border-bottom: 1px solid #3d3d3d;
+        color: #ffffff;
+    }
+    
+    .schedule-table tr:hover {
+        background: #363636;
+    }
+    
+    .event-dot {
+        height: 12px;
+        width: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create tabs for different days
+    day_tabs = st.tabs([f"Day {day.split()[-1]}" for day in sorted(schedule_df['Day'].unique())])
+    
+    # Color palette for different events
+    color_palette = {
+        "Solo Dance": "#FF6B6B",
+        "Group Dance": "#4ECDC4",
+        "Singing": "#45B7D1",
+        "Drama": "#96CEB4",
+        "Debate": "#FFEEAD",
+        "Photography": "#D4A5A5",
+        "Poetry": "#9B9B9B",
+        "Fashion Show": "#FFD93D",
+        "Quiz": "#6C5B7B",
+        "Treasure Hunt": "#FF8C42"
+    }
+    
+    for idx, day in enumerate(sorted(schedule_df['Day'].unique())):
+        with day_tabs[idx]:
+            st.markdown(f"<h3 style='color: #4CAF50;'>{day} Schedule</h3>", unsafe_allow_html=True)
+            
+            day_schedule = schedule_df[schedule_df['Day'] == day].sort_values('Time')
+            
+            # Create timeline visualization
+            fig = go.Figure()
+            
+            for event in day_schedule['Event'].unique():
+                event_data = day_schedule[day_schedule['Event'] == event]
+                fig.add_trace(go.Scatter(
+                    x=event_data['Time'],
+                    y=[event] * len(event_data),
+                    mode='markers+text',
+                    name=event,
+                    text=event_data['Participants'].apply(lambda x: f'{x} participants'),
+                    marker=dict(
+                        size=20,
+                        color=color_palette[event],
+                        symbol='circle'
+                    ),
+                    textposition="top center"
+                ))
+            
+            fig.update_layout(
+                plot_bgcolor='#1a1a1a',
+                paper_bgcolor='#1a1a1a',
+                font=dict(color='white'),
+                showlegend=True,
+                height=400,
+                margin=dict(l=20, r=20, t=40, b=20),
+                xaxis=dict(
+                    showgrid=True,
+                    gridcolor='#2d2d2d',
+                    title='Time',
+                    title_font=dict(color='white')
+                ),
+                yaxis=dict(
+                    showgrid=True,
+                    gridcolor='#2d2d2d',
+                    title='Event',
+                    title_font=dict(color='white')
+                ),
+                legend=dict(
+                    bgcolor='#2d2d2d',
+                    bordercolor='#3d3d3d'
+                )
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Display detailed schedule in a table
+            st.markdown("<div class='timeline-container'>", unsafe_allow_html=True)
+            st.markdown("""
+            <table class="schedule-table">
+                <tr>
+                    <th>Time</th>
+                    <th>Event</th>
+                    <th>Participants</th>
+                </tr>
+            """, unsafe_allow_html=True)
+            
+            for _, row in day_schedule.iterrows():
+                event_color = color_palette[row['Event']]
+                st.markdown(f"""
+                <tr>
+                    <td>{row['Time']}</td>
+                    <td>
+                        <span class="event-dot" style="background-color: {event_color}"></span>
+                        {row['Event']}
+                    </td>
+                    <td>{row['Participants']}</td>
+                </tr>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("</table>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
