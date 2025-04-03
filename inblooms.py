@@ -13,7 +13,20 @@ import datetime
 import altair as alt
 import zipfile
 
-# Force dark theme
+# Set page config FIRST
+st.set_page_config(
+    page_title="InBloom '25",
+    page_icon="🌷",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': None
+    }
+)
+
+# Then add dark theme styling
 st.markdown("""
 <style>
     /* Main background */
@@ -68,19 +81,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-# Set page config with dark theme
-st.set_page_config(
-    page_title="InBloom '25",
-    page_icon="🌷",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        'Get Help': None,
-        'Report a bug': None,
-        'About': None
-    }
-)
 
 # Define color scheme
 PRIMARY_COLOR = "#4CAF50"
